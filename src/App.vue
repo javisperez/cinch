@@ -5,12 +5,14 @@ import { downloadStl } from './clip/exportStl'
 import { buildFitTest, canFitTest } from './clip/fitTest'
 import { cableLabel } from './clip/cable'
 import { DEFAULTS, fmt, mechanismsFor, sizeLabel, type ClipParams } from './clip/types'
+import { analyticsPresent, CONSENT_EVENT, FEATURES, track } from './analytics'
 import { APP_NAME, AUTHOR, REPO_URL } from './config'
 import {
   buildShareLink, clipLabel, cloneClips, consumeShareLink, copyName, exportAllProjectsFile, exportProjectFile, findProject, loadCurrentName, loadProjects,
   loadWorkspace, parseProjectImport, persistProjects, sameClips, saveCurrentName, saveWorkspace, slugify, upsertProject, type ClipEntry,
 } from './projects'
 import CableStep from './components/CableStep.vue'
+import ConsentBanner from './components/ConsentBanner.vue'
 import ClipTabs from './components/ClipTabs.vue'
 import ClipViewer from './components/ClipViewer.vue'
 import HoldStep from './components/HoldStep.vue'
@@ -20,6 +22,7 @@ import SupportButton from './components/SupportButton.vue'
 
 // a share link (#p=…) opens with that project; otherwise the work picks up where it was left
 const shared = consumeShareLink()
+track('app_opened', { source: shared ? 'share_link' : 'direct' })
 const start = shared ? { clips: shared.clips, active: 0 } : loadWorkspace()
 // the project's clips, and the one being edited: `params` is that clip's settings, which every step edits directly
 const clips = ref<ClipEntry[]>(start.clips)
@@ -46,8 +49,16 @@ if (shared) {
   saveCurrentName(projectName.value)
 }
 // edits go into the open clip, and everything is autosaved
+// which kind of clip people make is counted (see analytics.ts); switching clips or opening a project is not a choice, so it is not
+const features = () => FEATURES.map((k) => [k, params[k]] as const)
+let seen = features()
 watch(params, () => {
   clips.value[active.value] = { ...clips.value[active.value], params: { ...params } }
+  const now = features()
+  now.forEach(([k, v], i) => {
+    if (v !== seen[i][1]) track('feature_changed', { feature: k, value: String(v) })
+  })
+  seen = now
 })
 watch([clips, active], () => saveWorkspace({ clips: clips.value, active: active.value }), { deep: true })
 watch(projectName, saveCurrentName)
@@ -55,11 +66,13 @@ watch(projectName, saveCurrentName)
 function openClip(i: number) {
   active.value = i
   Object.assign(params, clips.value[i].params)
+  seen = features()
   fitTest.value = false
 }
 async function addClip() {
   // starts as a copy of the clip you are on: change only what differs (say, the diameter)
   clips.value.push({ name: '', params: { ...params } })
+  track('clip_added')
   active.value = clips.value.length - 1
   // and asks what to call it, so the tabs say what is what from the start (leave it empty to go by size)
   await nextTick()
@@ -87,30 +100,44 @@ function saveProject(name: string) {
   projects.value = upsertProject(projects.value, final, clips.value)
   persistProjects(projects.value)
   projectName.value = final
+  track('project_saved')
 }
 function openProject(name: string) {
   const p = findProject(projects.value, name)
   if (!p) return
   if (dirty.value && projectName.value && !confirm(`"${projectName.value}" has changes you have not saved. Open "${p.name}" anyway?`)) return
   loadInto(p.name, p.clips)
+  track('project_opened')
 }
 function removeProject(name: string) {
   if (!confirm(`Delete the project "${name}"?`)) return
   projects.value = projects.value.filter((p) => p.name !== name)
   persistProjects(projects.value)
+  track('project_deleted')
 }
 function duplicateProject(name: string) {
   const p = findProject(projects.value, name)
   if (!p) return
   projects.value = upsertProject(projects.value, copyName(projects.value, p.name), p.clips)
   persistProjects(projects.value)
+  track('project_duplicated')
 }
 function newProject() {
   if (dirty.value && !confirm('Start over from the defaults? Anything you have not saved is lost.')) return
   loadInto('', [{ name: '', params: { ...DEFAULTS } }])
+  track('project_created')
 }
 function copyLink() {
   navigator.clipboard?.writeText(buildShareLink(projectName.value.trim(), clips.value)).catch(() => {})
+  track('share_link_copied')
+}
+function exportOne() {
+  exportProjectFile(projectName.value.trim() || 'cinch-project', clips.value)
+  track('project_file_exported', { scope: 'project' })
+}
+function exportLibrary() {
+  exportAllProjectsFile(projects.value)
+  track('project_file_exported', { scope: 'library' })
 }
 async function importFile(file: File) {
   try {
@@ -118,11 +145,14 @@ async function importFile(file: File) {
     if (data.kind === 'library') {
       for (const p of data.projects) projects.value = upsertProject(projects.value, p.name, p.clips)
       persistProjects(projects.value)
+      track('project_file_imported', { kind: 'library' })
       alert(`Added ${data.projects.length} project${data.projects.length === 1 ? '' : 's'} to your list.`)
     } else {
       loadInto(data.name, data.clips)
+      track('project_file_imported', { kind: 'project' })
     }
   } catch {
+    track('project_file_imported', { kind: 'invalid' })
     alert('That file does not look like a Cinch project.')
   }
 }
@@ -191,9 +221,17 @@ function stlName(c: ClipEntry, strip = false): string {
   return [slugify(projectName.value), slugify(c.name), base].filter(Boolean).join('_') + '.stl'
 }
 
+/** brings the analytics banner back, so the choice can be changed */
+const reopenConsent = () => window.dispatchEvent(new Event(CONSENT_EVENT))
+
+function trackExport(p: ClipParams, scope: 'clip' | 'all', fitTestStrip: boolean) {
+  track('stl_exported', { shape: p.shape, mechanism: p.mechanism, holder: p.holder, cable_shape: p.cableShape, scope, fit_test: fitTestStrip })
+}
+
 function download() {
   if (!result.value) return
   downloadStl(result.value.geometry, stlName(clips.value[active.value], showingStrip.value))
+  trackExport(clips.value[active.value].params, 'clip', showingStrip.value)
 }
 
 // every clip in the project, one STL each
@@ -207,6 +245,7 @@ async function downloadAll() {
       for (let n = 2; used.has(name); n++) name = stlName(c).replace(/\.stl$/, `-${n}.stl`)
       used.add(name)
       downloadStl(buildClip({ ...c.params }).geometry, name)
+      trackExport(c.params, 'all', false)
       await new Promise((r) => setTimeout(r, 250)) // browsers drop downloads that come in a burst
     }
   } catch (e) {
@@ -242,8 +281,8 @@ async function downloadAll() {
           @remove="removeProject"
           @duplicate="duplicateProject"
           @create="newProject"
-          @export-one="exportProjectFile(projectName.trim() || 'cinch-project', clips)"
-          @export-all="exportAllProjectsFile(projects)"
+          @export-one="exportOne"
+          @export-all="exportLibrary"
           :downloading="downloadingAll"
           @download-all="downloadAll"
           @share="copyLink"
@@ -406,10 +445,15 @@ async function downloadAll() {
         <a :href="REPO_URL" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap underline hover:text-ink">Source on GitHub</a>
         ·
         <a :href="`${REPO_URL}/blob/main/LICENSE`" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap underline hover:text-ink">Apache 2.0</a>
+        <template v-if="analyticsPresent()">
+          ·
+          <button type="button" class="whitespace-nowrap underline hover:text-ink" @click="reopenConsent">Analytics settings</button>
+        </template>
       </p>
       <SupportButton />
     </footer>
     </aside>
     </div>
+    <ConsentBanner />
   </div>
 </template>

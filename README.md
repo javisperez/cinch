@@ -3,6 +3,8 @@
 A parametric cable clip generator for 3D printing. Pick what you're clipping onto, how thick the cable is,
 and how the clip should hold, then download a ready-to-print STL. Everything runs in the browser.
 
+**Try it: https://javisperez.github.io/cinch/**
+
 Built with Vue 3 + TypeScript + Vite + Tailwind v4 + three.js (`manifold-3d` for the boolean ops, so the STL is watertight).
 
 ## Run it
@@ -12,7 +14,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm build` typechecks and produces a static site in `dist/`.
+`pnpm build` typechecks and produces a static site in `dist/`; see [Deploying](#deploying) for how it is published.
 
 ## How it works
 
@@ -56,6 +58,47 @@ the browser), exports it as a JSON file, backs up every project in one file, and
 with the project and clip names. Projects live in `localStorage`, so they are per browser and per computer: use the
 backup file to move them. Saves from before clips existed open as a project with one clip.
 
+## Analytics
+
+The deployed site can count visits and a few coarse actions (which mount and holder people pick, STL downloads,
+whether a project was saved), through Google Analytics, and only after a visitor accepts the small banner. The
+"Analytics settings" link in the footer reopens it. No project or clip names, sizes, files or links are ever sent
+(see `src/analytics.ts` for the full list of events).
+
+The snippet is added by [`pages-analytics`](https://github.com/javisperez/pages-analytics) when the site is built, from
+the `ANALYTICS_ID` repository variable, so the ID is not in the source and forks, local builds and `pnpm dev` are never
+tracked. To turn it on: Settings → Secrets and variables → Actions → Variables → add `ANALYTICS_ID` with your GA4
+measurement ID. Google Analytics runs in consent mode: before a visitor accepts it stores no cookies, but Google may still
+receive anonymous, cookieless pings.
+
+## Deploying
+
+The site is a static build, hosted on GitHub Pages at **https://javisperez.github.io/cinch/**.
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds it and publishes it on every push to `main`
+(or by hand: Actions → Deploy to GitHub Pages → Run workflow).
+
+**First-time setup** (once per repository): Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+Without that the workflow's deploy step fails. Optionally add the `ANALYTICS_ID` variable (see [Analytics](#analytics)).
+
+How it works:
+
+- Pages serves a project site from `/<repo>/`, so the workflow builds with `BASE_URL=/cinch/`, which `vite.config.ts`
+  uses as Vite's `base`. Locally `BASE_URL` is unset and the app is served from `/`.
+- The build job installs with `pnpm install --frozen-lockfile` (the pnpm version comes from `packageManager` in
+  `package.json`), runs `pnpm build` (typecheck + Vite), and uploads `dist/`. A second job deploys it.
+- Everything is client-side (the WASM file is a hashed asset next to the JS), and project links keep their data in the
+  URL hash, so no server config or SPA fallback is needed.
+
+To check the Pages build locally:
+
+```bash
+BASE_URL=/cinch/ pnpm build
+pnpm preview   # then open http://localhost:4173/cinch/
+```
+
+**Forks or a renamed repo:** change `BASE_URL` in the workflow to `/<your-repo>/` (use `/` for a custom domain or a
+`<user>.github.io` repository) and update the link above.
+
 ## Code map
 
 | File | What it does |
@@ -70,6 +113,7 @@ backup file to move them. Saves from before clips existed open as a project with
 | `src/clip/bridge.ts` | The arch clip (plate, hinged arch, catch post with lip, barb, lift tab); |
 | `src/clip/cable.ts` | The cable's cross-section: round, or a flat cord lying on its wide side (room it needs, ring outline, preview shape) |
 | `src/clip/loop.ts` | The pole clip's Closed clip holder: a thin rounded loop with a curled hook, on a pad (extruded along Z) |
+| `src/analytics.ts`, `src/components/ConsentBanner.vue` | The few usage events that are counted, and the consent banner |
 | `src/projects.ts` | Autosave, named projects (each a list of clips), JSON files and share links; checks anything it loads against the defaults |
 | `src/clip/exportStl.ts` | Binary STL download |
 | `src/clip/types.ts` | Parameters, defaults, presets |
