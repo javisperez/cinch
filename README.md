@@ -65,11 +65,8 @@ whether a project was saved), through Google Analytics, and only after a visitor
 "Analytics settings" link in the footer reopens it. No project or clip names, sizes, files or links are ever sent
 (see `src/analytics.ts` for the full list of events).
 
-The snippet is added by [`pages-analytics`](https://github.com/javisperez/pages-analytics) when the site is built, from
-the `ANALYTICS_ID` repository variable, so the ID is not in the source and forks, local builds and `pnpm dev` are never
-tracked. To turn it on: Settings → Secrets and variables → Actions → Variables → add `ANALYTICS_ID` with your GA4
-measurement ID. Google Analytics runs in consent mode: before a visitor accepts it stores no cookies, but Google may still
-receive anonymous, cookieless pings.
+The snippet is added at build time by [`pages-analytics`](https://github.com/javisperez/pages-analytics); see its
+README for how it is configured.
 
 ## Deploying
 
@@ -78,7 +75,7 @@ The site is a static build, hosted on GitHub Pages at **https://javisperez.githu
 (or by hand: Actions → Deploy to GitHub Pages → Run workflow).
 
 **First-time setup** (once per repository): Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-Without that the workflow's deploy step fails. Optionally add the `ANALYTICS_ID` variable (see [Analytics](#analytics)).
+Without that the workflow's deploy step fails. Analytics is optional (see [Analytics](#analytics)).
 
 How it works:
 
@@ -95,9 +92,6 @@ To check the Pages build locally:
 BASE_URL=/cinch/ pnpm build
 pnpm preview   # then open http://localhost:4173/cinch/
 ```
-
-**Forks or a renamed repo:** change `BASE_URL` in the workflow to `/<your-repo>/` (use `/` for a custom domain or a
-`<user>.github.io` repository) and update the link above.
 
 ## Code map
 
