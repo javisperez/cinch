@@ -32,15 +32,15 @@ defineExpose({ startRename })
 </script>
 
 <template>
-  <!-- Folder tabs sitting on the settings panel: the open tab is the same sheet as the panel below it, so everything under it belongs to that clip. -->
-  <div class="relative shrink-0 bg-paper pt-2">
+  <!-- Folder tabs across the top: the open tab is the same colour as the preview under it, and everything below (preview and settings) belongs to that clip. -->
+  <div class="relative shrink-0 bg-card pt-2">
     <div class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-line"></div>
     <div class="relative flex items-end gap-1 px-3 sm:px-6">
     <div class="flex min-w-0 items-end gap-1" role="tablist" aria-label="Clips in this project">
       <template v-for="(c, i) in clips" :key="i">
         <div
           v-if="editing === i"
-          class="flex shrink-0 items-center rounded-t-xl border border-b-2 border-line border-b-card bg-card px-2.5 py-1.5"
+          class="flex shrink-0 items-center rounded-t-xl border border-b-2 border-line border-b-stage bg-stage px-2.5 py-1.5"
         >
           <input
             ref="input"
@@ -60,8 +60,8 @@ defineExpose({ startRename })
           class="group relative flex items-center rounded-t-xl border border-b-2 transition-colors"
           :class="
             active === i
-              ? 'z-10 shrink-0 border-line border-b-card bg-card text-ink'
-              : 'min-w-0 shrink border-transparent border-b-transparent text-ink-3 hover:bg-card/60 hover:text-ink'
+              ? 'z-10 shrink-0 border-line border-b-stage bg-stage text-ink'
+              : 'min-w-0 shrink border-transparent border-b-transparent text-ink-3 hover:bg-paper hover:text-ink'
           "
         >
           <span v-if="active === i" class="absolute inset-x-3 -top-px h-0.5 rounded-full bg-accent"></span>
@@ -80,7 +80,7 @@ defineExpose({ startRename })
           <template v-if="active === i">
             <button
               type="button"
-              class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-ink-3 transition-colors hover:bg-paper hover:text-ink"
+              class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-ink-3 transition-colors hover:bg-card hover:text-ink"
               :aria-label="`Rename ${clipLabel(c)}`"
               title="Give this clip a name"
               @click="startRename(i, c.name)"
@@ -106,7 +106,7 @@ defineExpose({ startRename })
     </div>
       <button
         type="button"
-        class="mb-1 flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-bold text-ink-2 transition-colors hover:bg-card hover:text-ink"
+        class="mb-1 flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-sm font-bold text-ink-2 transition-colors hover:bg-paper hover:text-ink"
         title="Add another clip, starting as a copy of this one"
         @click="emit('add')"
       >

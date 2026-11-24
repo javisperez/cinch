@@ -6,6 +6,8 @@
   --color-ink: #1d1f22;
   --color-ink-2: #565b62;
   --color-ink-3: #8a8f96;
+  /* the 3D preview's backdrop (same as the scene background in useClipViewer.ts); the open clip tab is the same colour, so it joins the preview */
+  --color-stage: #ece7dc;
   --color-line: #ddd6c7;
   --color-line-2: #ebe5d8;
   --color-accent: #ff5a1f;

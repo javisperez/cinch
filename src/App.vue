@@ -5,7 +5,7 @@ import { downloadStl } from './clip/exportStl'
 import { buildFitTest, canFitTest } from './clip/fitTest'
 import { cableLabel } from './clip/cable'
 import { DEFAULTS, fmt, mechanismsFor, sizeLabel, type ClipParams } from './clip/types'
-import { APP_NAME } from './config'
+import { APP_NAME, AUTHOR, REPO_URL } from './config'
 import {
   buildShareLink, clipLabel, cloneClips, consumeShareLink, copyName, exportAllProjectsFile, exportProjectFile, findProject, loadCurrentName, loadProjects,
   loadWorkspace, parseProjectImport, persistProjects, sameClips, saveCurrentName, saveWorkspace, slugify, upsertProject, type ClipEntry,
@@ -249,7 +249,6 @@ async function downloadAll() {
           @share="copyLink"
           @import="importFile"
         />
-        <SupportButton />
         <button
           type="button"
           class="whitespace-nowrap rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-white shadow-[0_2px_0_var(--color-accent-hover)] transition-all hover:bg-accent-hover active:translate-y-px disabled:opacity-50"
@@ -262,6 +261,16 @@ async function downloadAll() {
         </button>
       </div>
     </header>
+
+    <ClipTabs
+      ref="tabs"
+      :clips="clips"
+      :active="active"
+      @select="openClip"
+      @add="addClip"
+      @remove="removeClip"
+      @rename="renameClip"
+    />
 
     <div class="flex min-h-0 flex-1 flex-col lg:flex-row">
     <main class="relative min-h-[260px] flex-1 lg:min-h-0">
@@ -294,15 +303,6 @@ async function downloadAll() {
 
     <!-- below the preview on a phone; a full-height column beside it on a wide screen -->
     <aside class="flex shrink-0 flex-col lg:min-h-0 lg:w-[27rem] lg:border-l lg:border-line xl:w-[30rem]">
-    <ClipTabs
-      ref="tabs"
-      :clips="clips"
-      :active="active"
-      @select="openClip"
-      @add="addClip"
-      @remove="removeClip"
-      @rename="renameClip"
-    />
 
     <section class="flex shrink-0 flex-col bg-card lg:min-h-0 lg:flex-1" aria-label="Clip settings">
       <nav class="flex border-b border-line-2" role="tablist" aria-label="Steps">
@@ -328,7 +328,7 @@ async function downloadAll() {
         </button>
       </nav>
 
-      <div class="@container max-h-[36vh] overflow-y-auto px-4 py-4 sm:px-6 lg:max-h-none lg:min-h-0 lg:flex-1 lg:px-5">
+      <div class="@container max-h-[33vh] overflow-y-auto px-4 py-4 sm:px-6 lg:max-h-none lg:min-h-0 lg:flex-1 lg:px-5">
         <MountStep v-if="step === 0" :params="params" />
         <CableStep v-else-if="step === 1" :params="params" />
         <HoldStep v-else :params="params" />
@@ -395,6 +395,20 @@ async function downloadAll() {
         </div>
       </footer>
     </section>
+
+    <footer class="flex shrink-0 items-center justify-between gap-3 border-t border-line-2 bg-card px-4 py-2 text-[10px] leading-snug text-ink-3 lg:flex-col lg:justify-center lg:gap-y-2.5 lg:py-3 lg:text-[11px] lg:leading-relaxed">
+      <p class="lg:text-center">
+        Made by
+        <a :href="AUTHOR.url" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap underline hover:text-ink">{{ AUTHOR.name }}</a>
+        &amp;
+        <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap underline hover:text-ink">Claude</a>
+        ·
+        <a :href="REPO_URL" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap underline hover:text-ink">Source on GitHub</a>
+        ·
+        <a :href="`${REPO_URL}/blob/main/LICENSE`" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap underline hover:text-ink">Apache 2.0</a>
+      </p>
+      <SupportButton />
+    </footer>
     </aside>
     </div>
   </div>

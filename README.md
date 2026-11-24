@@ -47,7 +47,7 @@ Nothing to remember: your work is autosaved in the browser, so reloading picks u
 project button in the top bar to give it a name (Save), come back to it later, duplicate or delete it. A dot
 next to the name means there are changes you have not saved yet.
 
-A project can hold **several clips**, shown as tabs sitting on the settings panel, so everything below the open tab belongs to that clip. **Add clip** starts a new one as a copy of the
+A project can hold **several clips**, shown as tabs across the top, so the preview and everything in the side panel belong to the open clip. **Add clip** starts a new one as a copy of the
 one you are on, so for a pole with two widths you build the first, add a clip and change only the diameter.
 Add clip asks for a name right away (leave it empty to go by size); the pencil on the open tab renames it later, and the x removes it. **Download all** gives one STL per clip.
 
