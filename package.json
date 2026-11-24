@@ -1,0 +1,35 @@
+{
+  "name": "cinch-cable-clip-generator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Parametric cable clip generator for 3D printing: pick a mount and a cable, download an STL.",
+  "license": "Apache-2.0",
+  "author": "Javis Pérez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/javisperez/cinch.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/three": "^0.183.1",
+    "manifold-3d": "^3.5.5",
+    "tailwindcss": "^4.2.2",
+    "three": "^0.183.2",
+    "three-mesh-bvh": "0.9.8",
+    "vue": "^3.5.30"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/tsconfig": "^0.9.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1",
+    "vue-tsc": "^3.2.5"
+  }
+}
